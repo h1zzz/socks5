@@ -1,0 +1,2 @@
+
+#define NODE_VERSION "@PROJECT_VERSION@"
