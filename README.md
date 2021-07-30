@@ -1,6 +1,6 @@
-# purewater-node
-
 ## TODO
 
-socks5
-proxy
+**socks5 server**
+
+- macos
+- linux
