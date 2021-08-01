@@ -36,12 +36,12 @@ main (int argc, char *argv[])
   event_base_add (base, fd, EV_READ, accept_worker, NULL);
 
   while (1)
-    {
-      tv.tv_sec = 10;
-      tv.tv_usec = 0;
-      ret = event_base_loop (base, &tv);
-      pw_debug ("ret: %d\n", ret);
-    }
+  {
+    tv.tv_sec = 10;
+    tv.tv_usec = 0;
+    ret = event_base_loop (base, &tv);
+    pw_debug ("ret: %d\n", ret);
+  }
 
   event_base_destroy (base);
 
@@ -55,10 +55,10 @@ accept_worker (struct event_base *base, int fd, uint16_t flags, void *data)
 
   conn = accept (fd, NULL, NULL);
   if (conn == -1)
-    {
-      pw_error ("accept");
-      return;
-    }
+  {
+    pw_error ("accept");
+    return;
+  }
 
   putf ("recv new connection: %d\n", conn);
 
@@ -75,18 +75,18 @@ read_worker (struct event_base *base, int fd, uint16_t flags, void *data)
 
   n = read (fd, buf, sizeof (buf));
   if (n == -1)
-    {
-      pw_error ("read");
-      return;
-    }
+  {
+    pw_error ("read");
+    return;
+  }
 
   if (n == 0)
-    {
-      putf ("close connection: %d\n", fd);
-      event_base_delete (base, fd, flags);
-      close (fd);
-      return;
-    }
+  {
+    putf ("close connection: %d\n", fd);
+    event_base_delete (base, fd, flags);
+    close (fd);
+    return;
+  }
 
   putf ("recv %d: %s", fd, buf);
 

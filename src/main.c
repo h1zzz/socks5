@@ -77,44 +77,43 @@ read_options (int argc, char **argv)
   int opt, opt_index = 0, i;
 
   while ((opt = getopt_long (argc, argv, "hv", options, &opt_index)) != -1)
+  {
+    switch (opt)
     {
-      switch (opt)
-        {
-        case 1:
-          g_opt.host = optarg;
-          break;
-        case 2:
-          g_opt.port = atoi (optarg);
-          break;
-        case 'd':
-          g_opt.is_daemon = 1;
-          break;
-        case 'u':
-          g_opt.user = optarg;
-          break;
-        case 'p':
-          g_opt.passwd = optarg;
-          break;
-        case 'C':
-          g_opt.worker_connections = atoi (optarg);
-          break;
-        case 'P':
-          g_opt.worker_processes = atoi (optarg);
-          break;
-        case 'v':
-          fprintf (stdout, "%s version " NODE_VERSION "\n",
-                   basename (argv[0]));
-          exit (0);
-        case 'h':
-          usage (basename (argv[0]));
-          break;
-        case '?':
-          usage (basename (argv[0]));
-          break;
-        default:
-          usage (basename (argv[0]));
-        }
+    case 1:
+      g_opt.host = optarg;
+      break;
+    case 2:
+      g_opt.port = atoi (optarg);
+      break;
+    case 'd':
+      g_opt.is_daemon = 1;
+      break;
+    case 'u':
+      g_opt.user = optarg;
+      break;
+    case 'p':
+      g_opt.passwd = optarg;
+      break;
+    case 'C':
+      g_opt.worker_connections = atoi (optarg);
+      break;
+    case 'P':
+      g_opt.worker_processes = atoi (optarg);
+      break;
+    case 'v':
+      fprintf (stdout, "%s version " NODE_VERSION "\n", basename (argv[0]));
+      exit (0);
+    case 'h':
+      usage (basename (argv[0]));
+      break;
+    case '?':
+      usage (basename (argv[0]));
+      break;
+    default:
+      usage (basename (argv[0]));
     }
+  }
 
   if (g_opt.host == NULL || g_opt.port == 0)
     usage (basename (argv[0]));
@@ -138,11 +137,11 @@ master_process (void)
   /* s = socks_create ("0.0.0.0", 1080, "admin", "123456"); */
   s = socks_create (g_opt.host, g_opt.port, g_opt.user, g_opt.passwd);
   if (!s)
-    {
-      pw_debug ("%s:%d %s:%s\n", g_opt.host, g_opt.port, g_opt.user,
-                g_opt.passwd);
-      abort ();
-    }
+  {
+    pw_debug ("%s:%d %s:%s\n", g_opt.host, g_opt.port, g_opt.user,
+              g_opt.passwd);
+    abort ();
+  }
 
   fd = s->fd;
 

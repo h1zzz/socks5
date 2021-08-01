@@ -24,10 +24,10 @@ create_listen (unsigned short port)
 
   fd = socket (PF_INET, SOCK_STREAM, 0);
   if (fd == -1)
-    {
-      pw_error ("socket");
-      return -1;
-    }
+  {
+    pw_error ("socket");
+    return -1;
+  }
 
   si.sin_addr.s_addr = INADDR_ANY;
   si.sin_port = htons (port);
@@ -37,10 +37,10 @@ create_listen (unsigned short port)
   setsockopt (fd, SOL_SOCKET, SO_REUSEADDR, (const void *)&opt, sizeof (opt));
 
   if (bind (fd, (struct sockaddr *)&si, sizeof (si)) == -1)
-    {
-      pw_error ("bind");
-      return -1;
-    }
+  {
+    pw_error ("bind");
+    return -1;
+  }
 
   listen (fd, SOMAXCONN);
 

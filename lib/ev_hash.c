@@ -28,9 +28,9 @@ sdbm_hash (int fd)
   char *ptr = (char *)&fd;
 
   for (i = 0; i < sizeof (uint32_t); i++)
-    {
-      hash = ptr[i] + (hash << 6) + (hash << 16) - hash;
-    }
+  {
+    hash = ptr[i] + (hash << 6) + (hash << 16) - hash;
+  }
 
   return hash & 0x7FFFFFFF;
 }
@@ -70,11 +70,11 @@ ev_hash_get (struct event_base *base, int fd)
   p = hash->table[i];
 
   while (p)
-    {
-      if (p->ev->fd == fd)
-        return p->ev;
-      p = p->next;
-    }
+  {
+    if (p->ev->fd == fd)
+      return p->ev;
+    p = p->next;
+  }
 
   return NULL;
 }
@@ -90,22 +90,22 @@ ev_hash_set (struct event_base *base, int fd, struct event *ev)
   p = hash->table[i];
 
   while (p)
+  {
+    if (p->ev->fd == fd)
     {
-      if (p->ev->fd == fd)
-        {
-          free (p->ev);
-          p->ev = ev;
-          return 0;
-        }
-      p = p->next;
+      free (p->ev);
+      p->ev = ev;
+      return 0;
     }
+    p = p->next;
+  }
 
   n = calloc (1, sizeof (struct entry));
   if (!n)
-    {
-      pw_error ("calloc");
-      return -1;
-    }
+  {
+    pw_error ("calloc");
+    return -1;
+  }
 
   n->ev = ev;
 
@@ -129,29 +129,29 @@ ev_hash_delete (struct event_base *base, int fd)
   c = hash->table[i];
 
   while (c)
+  {
+    if (c->ev->fd == fd)
     {
-      if (c->ev->fd == fd)
-        {
-          if (p)
-            {
-              p->next = c->next;
-              free (c->ev);
-              free (c);
-            }
-          else
-            {
-              if (c->next)
-                hash->table[i] = c->next;
-              else
-                hash->table[i] = NULL;
-              free (c->ev);
-              free (c);
-            }
-          return 0;
-        }
-      p = c;
-      c = c->next;
+      if (p)
+      {
+        p->next = c->next;
+        free (c->ev);
+        free (c);
+      }
+      else
+      {
+        if (c->next)
+          hash->table[i] = c->next;
+        else
+          hash->table[i] = NULL;
+        free (c->ev);
+        free (c);
+      }
+      return 0;
     }
+    p = c;
+    c = c->next;
+  }
 
   return -1;
 }
@@ -164,23 +164,23 @@ ev_hash_destroy (struct event_base *base)
   int i;
 
   if (hash)
+  {
+    if (hash->table)
     {
-      if (hash->table)
+      for (i = 0; i < hash->size; i++)
+      {
+        p = hash->table[i];
+        while (p)
         {
-          for (i = 0; i < hash->size; i++)
-            {
-              p = hash->table[i];
-              while (p)
-                {
-                  n = p->next;
-                  free (p->ev);
-                  free (p);
-                  p = n;
-                }
-            }
-          free (hash->table);
+          n = p->next;
+          free (p->ev);
+          free (p);
+          p = n;
         }
-      free (base->events);
-      base->events = NULL;
+      }
+      free (hash->table);
     }
+    free (base->events);
+    base->events = NULL;
+  }
 }

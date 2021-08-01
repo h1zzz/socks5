@@ -58,24 +58,24 @@ socks_create (const char *host, uint16_t port, const char *u, const char *p)
 
   s = calloc (1, sizeof (struct socks));
   if (!s)
-    {
-      pw_error ("calloc");
-      goto err;
-    }
+  {
+    pw_error ("calloc");
+    goto err;
+  }
 
   if (u && p)
-    {
-      memcpy (s->user, u, strlen (u));
-      memcpy (s->passwd, p, strlen (p));
-      s->use_auth = 1;
-    }
+  {
+    memcpy (s->user, u, strlen (u));
+    memcpy (s->passwd, p, strlen (p));
+    s->use_auth = 1;
+  }
 
   s->fd = socket (PF_INET, SOCK_STREAM, 0);
   if (s->fd == -1)
-    {
-      pw_error ("socket");
-      goto err;
-    }
+  {
+    pw_error ("socket");
+    goto err;
+  }
 
   si.sin_addr.s_addr = inet_addr (host);
   si.sin_port = htons (port);
@@ -88,16 +88,16 @@ socks_create (const char *host, uint16_t port, const char *u, const char *p)
 #endif
 
   if (bind (s->fd, (struct sockaddr *)&si, sizeof (si)) == -1)
-    {
-      pw_error ("bind");
-      goto err;
-    }
+  {
+    pw_error ("bind");
+    goto err;
+  }
 
   if (listen (s->fd, SOMAXCONN) == -1)
-    {
-      pw_error ("listen");
-      goto err;
-    }
+  {
+    pw_error ("listen");
+    goto err;
+  }
 
   return s;
 err:
@@ -110,11 +110,11 @@ void
 socks_close (struct socks *s)
 {
   if (s)
-    {
-      if (s->fd != -1)
-        close (s->fd);
-      free (s);
-    }
+  {
+    if (s->fd != -1)
+      close (s->fd);
+    free (s);
+  }
 }
 
 struct socks_conn *
@@ -124,10 +124,10 @@ socks_accept_conn (struct socks *s)
 
   c = calloc (1, sizeof (struct socks_conn));
   if (!c)
-    {
-      pw_error ("calloc");
-      return NULL;
-    }
+  {
+    pw_error ("calloc");
+    return NULL;
+  }
 
   c->socks = s;
   c->state = SOCKS_METHOD;
@@ -136,13 +136,13 @@ socks_accept_conn (struct socks *s)
 
   c->srcfd = accept (s->fd, (struct sockaddr *)&c->addr, &c->addrlen);
   if (c->srcfd == -1)
+  {
+    if (errno != EINTR)
     {
-      if (errno != EINTR)
-        {
-          pw_error ("accept");
-        }
-      return NULL;
+      pw_error ("accept");
     }
+    return NULL;
+  }
 
   return c;
 }
@@ -151,13 +151,13 @@ void
 socks_close_conn (struct socks_conn *c)
 {
   if (c)
-    {
-      if (c->dstfd != -1)
-        close (c->dstfd);
-      if (c->srcfd != -1)
-        close (c->srcfd);
-      free (c);
-    }
+  {
+    if (c->dstfd != -1)
+      close (c->dstfd);
+    if (c->srcfd != -1)
+      close (c->srcfd);
+    free (c);
+  }
 }
 
 int
@@ -169,63 +169,63 @@ socks_get_method (struct socks_conn *c)
 
   n = read (c->srcfd, buf, sizeof (buf));
   if (n <= 0)
+  {
+    if (n == -1)
     {
-      if (n == -1)
-        {
-          pw_error ("read");
-        }
-      return -1;
+      pw_error ("read");
     }
+    return -1;
+  }
 
   /* pw_debug("version: %d, n_methods: %d\n", buf[0], buf[1]); */
 
   if (buf[0] != SOCKS_VER)
-    {
-      pw_debug ("Version %d is not supported\n", buf[0]);
-      return -1;
-    }
+  {
+    pw_debug ("Version %d is not supported\n", buf[0]);
+    return -1;
+  }
 
   n_methods = buf[1];
   methods = buf + 2;
 
   for (i = 0; i < n_methods; i++)
+  {
+    if (methods[i] == 0x00 && !c->socks->use_auth)
     {
-      if (methods[i] == 0x00 && !c->socks->use_auth)
-        {
-          c->method = 0x00; /* X'00' NO AUTHENTICATION AUTHENTICATION */
-          break;
-        }
-      else if (methods[i] == 0x02 && c->socks->use_auth)
-        {
-          c->method = 0x02; /* X'02' USERNAME/PASSWORD */
-          break;
-        }
-      else
-        {
-          /**
-           * X'01' GSSAPI
-           * X'03' to X'7F' IANA ASSIGNED
-           * X'80' to X'FE' RESERVED FOR PRIVATE METHODS
-           * X'FF' NO ACCEPTABLE METHODS
-           */
-          c->method = 0xff; /* NO ACCEPTABLE METHODS */
-        }
+      c->method = 0x00; /* X'00' NO AUTHENTICATION AUTHENTICATION */
+      break;
     }
+    else if (methods[i] == 0x02 && c->socks->use_auth)
+    {
+      c->method = 0x02; /* X'02' USERNAME/PASSWORD */
+      break;
+    }
+    else
+    {
+      /**
+       * X'01' GSSAPI
+       * X'03' to X'7F' IANA ASSIGNED
+       * X'80' to X'FE' RESERVED FOR PRIVATE METHODS
+       * X'FF' NO ACCEPTABLE METHODS
+       */
+      c->method = 0xff; /* NO ACCEPTABLE METHODS */
+    }
+  }
 
   buf[0] = SOCKS_VER;
   buf[1] = c->method;
 
   if (write (c->srcfd, buf, 2) == -1)
-    {
-      pw_error ("write");
-      return -1;
-    }
+  {
+    pw_error ("write");
+    return -1;
+  }
 
   if (c->method == 0xff)
-    { /* NO ACCEPTABLE METHODS */
-      pw_debug ("Unsupported authentication method\n");
-      return -1;
-    }
+  { /* NO ACCEPTABLE METHODS */
+    pw_debug ("Unsupported authentication method\n");
+    return -1;
+  }
 
   c->state = SOCKS_AUTH;
 
@@ -242,13 +242,13 @@ socks_authenticate (struct socks_conn *c)
 
   n = read (c->srcfd, buf, sizeof (buf));
   if (n <= 0)
+  {
+    if (n == -1)
     {
-      if (n == -1)
-        {
-          pw_error ("read");
-        }
-      return -1;
+      pw_error ("read");
     }
+    return -1;
+  }
 
   ver = buf[0];
   ulen = buf[1];
@@ -264,10 +264,10 @@ socks_authenticate (struct socks_conn *c)
     buf[1] = 0;
 
   if (write (c->srcfd, buf, 2) == -1)
-    {
-      pw_error ("write");
-      return -1;
-    }
+  {
+    pw_error ("write");
+    return -1;
+  }
 
   if (buf[1] != 0)
     return -1;
@@ -303,13 +303,13 @@ socks_command (struct socks_conn *c)
 
   n = read (c->srcfd, buf, sizeof (buf));
   if (n <= 0)
+  {
+    if (n == -1)
     {
-      if (n == -1)
-        {
-          pw_error ("read");
-        }
-      return -1;
+      pw_error ("read");
     }
+    return -1;
+  }
 
   /* verify version */
   if (hdr->ver != SOCKS_VER)
@@ -319,52 +319,52 @@ socks_command (struct socks_conn *c)
   c->address_type = hdr->atyp;
 
   switch (hdr->cmd)
+  {
+  case SOCKS_CONNECT:
+
+    switch (hdr->atyp)
     {
-    case SOCKS_CONNECT:
+    case SOCKS_IPv4:
 
-      switch (hdr->atyp)
-        {
-        case SOCKS_IPv4:
+      memcpy (&addr, buf + 4, 4);
+      memcpy (&port, buf + 8, 2);
 
-          memcpy (&addr, buf + 4, 4);
-          memcpy (&port, buf + 8, 2);
+      pw_debug ("connect to %s:%d\n", inet_ntoa (addr), ntohs (port));
 
-          pw_debug ("connect to %s:%d\n", inet_ntoa (addr), ntohs (port));
+      ret = socks_ip_connect (c, addr.s_addr, ntohs (port));
+      if (ret == 0)
+        c->state = SOCKS_SERVE;
 
-          ret = socks_ip_connect (c, addr.s_addr, ntohs (port));
-          if (ret == 0)
-            c->state = SOCKS_SERVE;
+      return socks_replies (c, ret, 0, NULL, 0, 0);
 
-          return socks_replies (c, ret, 0, NULL, 0, 0);
+    case SOCKS_DOMAIN:
 
-        case SOCKS_DOMAIN:
+      domain_len = buf[4];
 
-          domain_len = buf[4];
+      memcpy (domain, buf + 5, domain_len);
+      memcpy (&port, buf + 5 + domain_len, 2);
 
-          memcpy (domain, buf + 5, domain_len);
-          memcpy (&port, buf + 5 + domain_len, 2);
+      pw_debug ("connect to %s:%d\n", domain, ntohs (port));
 
-          pw_debug ("connect to %s:%d\n", domain, ntohs (port));
+      ret = socks_domain_connect (c, domain, ntohs (port));
+      if (ret == 0)
+        c->state = SOCKS_SERVE;
 
-          ret = socks_domain_connect (c, domain, ntohs (port));
-          if (ret == 0)
-            c->state = SOCKS_SERVE;
-
-          return socks_replies (c, ret, 0, NULL, 0, 0);
-        case SOCKS_IPv6: /* TODO */
-        default:
-          pw_debug ("Unsupported address type: %c\n", hdr->atyp);
-          return socks_replies (c, SOCKS_ADDRESS_TYPE_NOT_SUPPORTED, 0, NULL,
-                                0, 0);
-        }
-      break;
-
-    case SOCKS_BIND:              /* TODO */
-    case SOCKS_UDP_ASSOCIATE_UDP: /* TODO */
+      return socks_replies (c, ret, 0, NULL, 0, 0);
+    case SOCKS_IPv6: /* TODO */
     default:
-      pw_debug ("Unsupported command: %c\n", hdr->cmd);
-      return socks_replies (c, SOCKS_COMMAND_NOT_SUPPORTED, 0, NULL, 0, 0);
+      pw_debug ("Unsupported address type: %c\n", hdr->atyp);
+      return socks_replies (c, SOCKS_ADDRESS_TYPE_NOT_SUPPORTED, 0, NULL, 0,
+                            0);
     }
+    break;
+
+  case SOCKS_BIND:              /* TODO */
+  case SOCKS_UDP_ASSOCIATE_UDP: /* TODO */
+  default:
+    pw_debug ("Unsupported command: %c\n", hdr->cmd);
+    return socks_replies (c, SOCKS_COMMAND_NOT_SUPPORTED, 0, NULL, 0, 0);
+  }
 
   return 0;
 }
@@ -376,24 +376,24 @@ socks_serve (struct socks_conn *c, int fd)
   int n;
 
   while (1)
+  {
+    n = read (fd, buf, sizeof (buf));
+    if (n <= 0)
     {
-      n = read (fd, buf, sizeof (buf));
-      if (n <= 0)
-        {
-          if (n == -1)
-            {
-              if (errno == EAGAIN)
-                break;
-              pw_error ("read");
-            }
-          return -1;
-        }
-      if (write (fd == c->srcfd ? c->dstfd : c->srcfd, buf, n) == -1)
-        {
-          pw_error ("write");
-          return -1;
-        }
+      if (n == -1)
+      {
+        if (errno == EAGAIN)
+          break;
+        pw_error ("read");
+      }
+      return -1;
     }
+    if (write (fd == c->srcfd ? c->dstfd : c->srcfd, buf, n) == -1)
+    {
+      pw_error ("write");
+      return -1;
+    }
+  }
 
   return 0;
 }
@@ -412,10 +412,10 @@ socks_replies (struct socks_conn *c, uint8_t rep, uint8_t atyp,
   char buf[] = { SOCKS_VER, rep, 0, SOCKS_IPv4, 0, 0, 0, 0, 0, 0 };
 
   if (write (c->srcfd, buf, sizeof (buf)) == -1)
-    {
-      pw_error ("write");
-      return -1;
-    }
+  {
+    pw_error ("write");
+    return -1;
+  }
 
 #if 0
   /* TODO */
@@ -446,27 +446,27 @@ socks_ip_connect (struct socks_conn *c, in_addr_t addr, in_port_t port)
 
   fd = socket (PF_INET, SOCK_STREAM, 0);
   if (fd == -1)
-    {
-      pw_error ("socket");
-      ret = SOCKS_FAILURE;
-      goto end;
-    }
+  {
+    pw_error ("socket");
+    ret = SOCKS_FAILURE;
+    goto end;
+  }
 
   /* TODO: add connect timeout */
 
   if (connect (fd, (struct sockaddr *)&si, sizeof (si)) == -1)
-    {
-      ret = (errno == ENETUNREACH)    ? SOCKS_NETWORK_UNREACHABLE
-            : (errno == EHOSTUNREACH) ? SOCKS_HOST_UNREACHABLE
-            : (errno == ECONNREFUSED) ? SOCKS_CONNECTION_REFUSED
-                                      : SOCKS_FAILURE;
-      close (fd);
-      pw_error ("connect");
-    }
+  {
+    ret = (errno == ENETUNREACH)    ? SOCKS_NETWORK_UNREACHABLE
+          : (errno == EHOSTUNREACH) ? SOCKS_HOST_UNREACHABLE
+          : (errno == ECONNREFUSED) ? SOCKS_CONNECTION_REFUSED
+                                    : SOCKS_FAILURE;
+    close (fd);
+    pw_error ("connect");
+  }
   else
-    {
-      c->dstfd = fd;
-    }
+  {
+    c->dstfd = fd;
+  }
 
 end:
   return ret;
@@ -486,35 +486,35 @@ socks_domain_connect (struct socks_conn *c, const char *domain, in_port_t port)
   hints.ai_protocol = IPPROTO_TCP;
 
   if (getaddrinfo (domain, portstr, &hints, &addr_list) == -1)
-    {
-      pw_error ("getaddrinfo");
-      return -1;
-    }
+  {
+    pw_error ("getaddrinfo");
+    return -1;
+  }
 
   for (curr = addr_list; curr; curr = curr->ai_next)
+  {
+    fd = socket (curr->ai_family, curr->ai_socktype, curr->ai_protocol);
+    if (fd == -1)
     {
-      fd = socket (curr->ai_family, curr->ai_socktype, curr->ai_protocol);
-      if (fd == -1)
-        {
-          pw_error ("socket");
-          ret = -1;
-          continue;
-        }
-
-      /* TODO: add connect timeout */
-
-      if (connect (fd, curr->ai_addr, curr->ai_addrlen) == -1)
-        {
-          ret = (errno == ENETUNREACH)    ? SOCKS_NETWORK_UNREACHABLE
-                : (errno == EHOSTUNREACH) ? SOCKS_HOST_UNREACHABLE
-                : (errno == ECONNREFUSED) ? SOCKS_CONNECTION_REFUSED
-                                          : SOCKS_FAILURE;
-          pw_error ("connect");
-          close (fd);
-          continue;
-        }
-      break;
+      pw_error ("socket");
+      ret = -1;
+      continue;
     }
+
+    /* TODO: add connect timeout */
+
+    if (connect (fd, curr->ai_addr, curr->ai_addrlen) == -1)
+    {
+      ret = (errno == ENETUNREACH)    ? SOCKS_NETWORK_UNREACHABLE
+            : (errno == EHOSTUNREACH) ? SOCKS_HOST_UNREACHABLE
+            : (errno == ECONNREFUSED) ? SOCKS_CONNECTION_REFUSED
+                                      : SOCKS_FAILURE;
+      pw_error ("connect");
+      close (fd);
+      continue;
+    }
+    break;
+  }
 
   c->dstfd = fd;
   freeaddrinfo (addr_list);

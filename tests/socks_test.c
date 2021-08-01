@@ -42,13 +42,13 @@ main (int argc, char *argv[])
   event_base_add (base, s->fd, EV_READ, accept_worker, s);
 
   while (1)
-    {
-      tv.tv_sec = 10;
-      tv.tv_usec = 0;
-      ret = event_base_loop (base, &tv);
-      pw_debug ("event_base_loop ret: %d\n", ret);
-      pw_debug ("event number: %d\n", base->event_num);
-    }
+  {
+    tv.tv_sec = 10;
+    tv.tv_usec = 0;
+    ret = event_base_loop (base, &tv);
+    pw_debug ("event_base_loop ret: %d\n", ret);
+    pw_debug ("event number: %d\n", base->event_num);
+  }
   event_base_delete (base, s->fd, EV_READ);
   event_base_destroy (base);
 
@@ -77,38 +77,38 @@ read_worker (struct event_base *base, int fd, uint16_t flags, void *data)
   struct socks_conn *c = data;
 
   switch (c->state)
+  {
+  case SOCKS_METHOD:
+    if (socks_get_method (c) == -1)
     {
-    case SOCKS_METHOD:
-      if (socks_get_method (c) == -1)
-        {
-          pw_debug ("socks get method failed\n");
-          goto done;
-        }
-      break;
-    case SOCKS_AUTH:
-      if (socks_authenticate (c) == -1)
-        {
-          pw_debug ("socks authenticate failed\n");
-          goto done;
-        }
-      break;
-    case SOCKS_CMD:
-      if (socks_command (c) == -1)
-        {
-          pw_debug ("socks handle command failed\n");
-          goto done;
-        }
-      set_nonblocking (c->dstfd, 1);
-      if (event_base_add (base, c->dstfd, EV_READ, read_worker, c) == -1)
-        goto done;
-      break;
-    case SOCKS_SERVE:
-      if (socks_serve (c, fd) == -1)
-        goto done;
-      break;
-    default:
+      pw_debug ("socks get method failed\n");
       goto done;
     }
+    break;
+  case SOCKS_AUTH:
+    if (socks_authenticate (c) == -1)
+    {
+      pw_debug ("socks authenticate failed\n");
+      goto done;
+    }
+    break;
+  case SOCKS_CMD:
+    if (socks_command (c) == -1)
+    {
+      pw_debug ("socks handle command failed\n");
+      goto done;
+    }
+    set_nonblocking (c->dstfd, 1);
+    if (event_base_add (base, c->dstfd, EV_READ, read_worker, c) == -1)
+      goto done;
+    break;
+  case SOCKS_SERVE:
+    if (socks_serve (c, fd) == -1)
+      goto done;
+    break;
+  default:
+    goto done;
+  }
 
   return;
 done:

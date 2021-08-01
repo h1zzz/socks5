@@ -23,16 +23,16 @@ main (int argc, char *argv[])
 
   fd = socket (PF_INET, SOCK_STREAM, 0);
   if (fd == -1)
-    {
-      pw_error ("socket");
-      return -1;
-    }
+  {
+    pw_error ("socket");
+    return -1;
+  }
 
   if (connect (fd, (struct sockaddr *)&si, sizeof (si)) == -1)
-    {
-      pw_error ("connect");
-      return -1;
-    }
+  {
+    pw_error ("connect");
+    return -1;
+  }
 
   fork ();
   pw_debug ("pid: %d\n", getpid ());
@@ -42,9 +42,9 @@ main (int argc, char *argv[])
 
   n = read (fd, buf, sizeof (buf));
   if (n == -1)
-    {
-      pw_error ("read");
-    }
+  {
+    pw_error ("read");
+  }
 
   pw_debug ("%d, %d, %s\n", getpid (), n, buf);
   sleep (30);

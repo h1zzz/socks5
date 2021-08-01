@@ -24,10 +24,10 @@ register_fd (int epfd, int fd)
   ee.data.fd = fd;
 
   if (epoll_ctl (epfd, EPOLL_CTL_ADD, fd, &ee) == -1)
-    {
-      perror ("epoll_ctl");
-      return;
-    }
+  {
+    perror ("epoll_ctl");
+    return;
+  }
 }
 
 static void
@@ -39,10 +39,10 @@ unregister_fd (int epfd, int fd)
   ee.data.fd = fd;
 
   if (epoll_ctl (epfd, EPOLL_CTL_DEL, fd, &ee) == -1)
-    {
-      perror ("epoll_ctl");
-      return;
-    }
+  {
+    perror ("epoll_ctl");
+    return;
+  }
 }
 
 static void
@@ -52,17 +52,17 @@ serve (int epfd, int fd)
 
   int n = read (fd, buffer, sizeof (buffer));
   if (n == -1)
-    {
-      perror ("read");
-      return;
-    }
+  {
+    perror ("read");
+    return;
+  }
   if (n == 0)
-    {
-      unregister_fd (epfd, fd);
-      close (fd);
-      fprintf (stdout, "close %d\n", fd);
-      return;
-    }
+  {
+    unregister_fd (epfd, fd);
+    close (fd);
+    fprintf (stdout, "close %d\n", fd);
+    return;
+  }
   fprintf (stdout, "fd: %d, %d, %s", fd, n, (char *)buffer);
 }
 
@@ -94,33 +94,33 @@ main (int argc, char *argv[])
 
   epfd = epoll_create (MAX_CONN);
   if (epfd == -1)
-    {
-      perror ("epoll_create");
-      return -1;
-    }
+  {
+    perror ("epoll_create");
+    return -1;
+  }
 
   register_fd (epfd, fd);
 
   while (1)
+  {
+    nfds = epoll_wait (epfd, events, MAX_CONN, -1);
+    if (nfds == -1)
     {
-      nfds = epoll_wait (epfd, events, MAX_CONN, -1);
-      if (nfds == -1)
-        {
-          perror ("epoll_wait");
-          return -1;
-        }
-      for (i = 0; i < nfds; i++)
-        {
-          if (events[i].data.fd == fd)
-            {
-              /* listen fd */
-              fprintf (stdout, "listen fd: %d\n", events[i].data.fd);
-              handle_accept (epfd, events[i].data.fd);
-              continue;
-            }
-          serve (epfd, events[i].data.fd);
-        }
+      perror ("epoll_wait");
+      return -1;
     }
+    for (i = 0; i < nfds; i++)
+    {
+      if (events[i].data.fd == fd)
+      {
+        /* listen fd */
+        fprintf (stdout, "listen fd: %d\n", events[i].data.fd);
+        handle_accept (epfd, events[i].data.fd);
+        continue;
+      }
+      serve (epfd, events[i].data.fd);
+    }
+  }
 
   return 0;
 }

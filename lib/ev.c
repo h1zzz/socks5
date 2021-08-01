@@ -27,10 +27,10 @@ event_base_new (uint32_t events_size)
 
   base = calloc (1, sizeof (struct event_base));
   if (!base)
-    {
-      pw_error ("calloc");
-      goto err;
-    }
+  {
+    pw_error ("calloc");
+    goto err;
+  }
 
   base->event_num = 0;
   base->events_size = events_size;
@@ -59,33 +59,33 @@ event_base_add (struct event_base *base, int fd, uint16_t flags,
 
   ev = ev_hash_get (base, fd);
   if (ev)
-    {
-      ev->flags |= flags;
-      if (op_add (base, fd, flags) == -1)
-        return -1;
-    }
+  {
+    ev->flags |= flags;
+    if (op_add (base, fd, flags) == -1)
+      return -1;
+  }
   else
+  {
+    ev = calloc (1, sizeof (struct event));
+    if (!ev)
     {
-      ev = calloc (1, sizeof (struct event));
-      if (!ev)
-        {
-          pw_error ("calloc");
-          return -1;
-        }
-
-      ev->fd = fd;
-      ev->flags = flags;
-
-      ev_hash_set (base, fd, ev);
-
-      if (op_add (base, fd, flags) == -1)
-        {
-          ev_hash_delete (base, fd);
-          return -1;
-        }
-
-      base->event_num++;
+      pw_error ("calloc");
+      return -1;
     }
+
+    ev->fd = fd;
+    ev->flags = flags;
+
+    ev_hash_set (base, fd, ev);
+
+    if (op_add (base, fd, flags) == -1)
+    {
+      ev_hash_delete (base, fd);
+      return -1;
+    }
+
+    base->event_num++;
+  }
 
   ev->fn = fn;
   ev->data = data;
@@ -131,9 +131,9 @@ void
 event_base_destroy (struct event_base *base)
 {
   if (base)
-    {
-      ev_hash_destroy (base);
-      op_destroy (base);
-      free (base);
-    }
+  {
+    ev_hash_destroy (base);
+    op_destroy (base);
+    free (base);
+  }
 }

@@ -39,10 +39,10 @@ worker_listen_add (int fd, uint16_t flags, event_handler_t *fn, void *data)
 
   newfd = calloc (1, sizeof (struct fd_list));
   if (!newfd)
-    {
-      pw_error ("calloc");
-      return;
-    }
+  {
+    pw_error ("calloc");
+    return;
+  }
 
   newfd->fd = fd;
   newfd->fn = fn;
@@ -61,19 +61,19 @@ worker_listen_delete (int fd)
 
   /* delete listen fd. */
   for (curr = fd_list; curr; curr = curr->next)
+  {
+    if (curr->fd == fd)
     {
-      if (curr->fd == fd)
-        {
-          /* delete fd. */
-          if (prev)
-            prev->next = curr->next;
-          else
-            fd_list = curr->next;
-          free (curr);
-          break;
-        }
-      prev = curr;
+      /* delete fd. */
+      if (prev)
+        prev->next = curr->next;
+      else
+        fd_list = curr->next;
+      free (curr);
+      break;
     }
+    prev = curr;
+  }
 
   worker_process_restart ();
 }
@@ -88,14 +88,14 @@ worker_quit (int signo)
 
   /* delete listen fd for event. */
   for (curr = fd_list; curr; curr = curr->next)
+  {
+    pw_debug ("delete listen fd: %d\n", curr->fd);
+    ret = event_base_delete (worker_base, curr->fd, curr->flags);
+    if (ret == -1)
     {
-      pw_debug ("delete listen fd: %d\n", curr->fd);
-      ret = event_base_delete (worker_base, curr->fd, curr->flags);
-      if (ret == -1)
-        {
-          pw_debug ("delete %d failed\n", curr->fd);
-        }
+      pw_debug ("delete %d failed\n", curr->fd);
     }
+  }
 }
 
 static void
@@ -113,48 +113,47 @@ worker_process (void)
   action.sa_flags = 0;
 
   if (sigaction (SIGQUIT, &action, NULL) == -1)
-    {
-      pw_error ("sigaction");
-      abort ();
-    }
+  {
+    pw_error ("sigaction");
+    abort ();
+  }
 
   worker_base = event_base_new (g_opt.worker_connections);
   if (!worker_base)
-    {
-      pw_debug ("event_base_new failed\n");
-      abort ();
-    }
+  {
+    pw_debug ("event_base_new failed\n");
+    abort ();
+  }
 
   /* add listen fd to event. */
   for (curr = fd_list; curr; curr = curr->next)
+  {
+    ret = event_base_add (worker_base, curr->fd, curr->flags, curr->fn,
+                          curr->data);
+    if (ret == -1)
     {
-      ret = event_base_add (worker_base, curr->fd, curr->flags, curr->fn,
-                            curr->data);
-      if (ret == -1)
-        {
-          pw_debug ("event_base_add %d failed\n", curr->fd);
-        }
+      pw_debug ("event_base_add %d failed\n", curr->fd);
     }
+  }
 
   while (1)
+  {
+    tv.tv_sec = 5;
+    tv.tv_usec = 0;
+
+    ret = event_base_loop (worker_base, &tv);
+    if (ret == -1)
     {
-      tv.tv_sec = 5;
-      tv.tv_usec = 0;
-
-      ret = event_base_loop (worker_base, &tv);
-      if (ret == -1)
-        {
-          pw_error ("event_base_loop");
-        }
-
-      if (ret == 0) /* timeout */
-        {
-          pw_debug ("worker event timeout %d, %d\n", ret,
-                    worker_base->event_num);
-          if (is_exit_worker && worker_base->event_num == 0)
-            break; /* exit woker process. */
-        }
+      pw_error ("event_base_loop");
     }
+
+    if (ret == 0) /* timeout */
+    {
+      pw_debug ("worker event timeout %d, %d\n", ret, worker_base->event_num);
+      if (is_exit_worker && worker_base->event_num == 0)
+        break; /* exit woker process. */
+    }
+  }
 
   event_base_destroy (worker_base);
 
@@ -173,40 +172,40 @@ worker_process_restart (void)
 
   pids = calloc (g_opt.worker_processes, sizeof (pid_t));
   if (!pids)
-    {
-      pw_error ("calloc");
-      abort ();
-    }
+  {
+    pw_error ("calloc");
+    abort ();
+  }
 
   sigemptyset (&sigs);
   sigaddset (&sigs, SIGCHLD);
 
   if (sigprocmask (SIG_BLOCK, &sigs, NULL) == -1)
-    {
-      pw_error ("sigprocmask");
-      abort ();
-    }
+  {
+    pw_error ("sigprocmask");
+    abort ();
+  }
 
   for (i = 0; i < g_opt.worker_processes; i++)
+  {
+    pids[i] = fork ();
+
+    if (pids[i] == -1)
     {
-      pids[i] = fork ();
-
-      if (pids[i] == -1)
-        {
-          pw_error ("fork");
-          continue;
-        }
-
-      if (pids[i] == 0) /* child process. */
-        {
-          /* close parent fds. */
-          worker_process ();
-        }
-
-      /* parent process. */
-      if (worker_pids) /* stop old worker process. */
-        kill (worker_pids[i], SIGQUIT);
+      pw_error ("fork");
+      continue;
     }
+
+    if (pids[i] == 0) /* child process. */
+    {
+      /* close parent fds. */
+      worker_process ();
+    }
+
+    /* parent process. */
+    if (worker_pids) /* stop old worker process. */
+      kill (worker_pids[i], SIGQUIT);
+  }
 
   if (worker_pids)
     free (worker_pids);
@@ -216,16 +215,16 @@ worker_process_restart (void)
   action.sa_flags = 0;
 
   if (sigaction (SIGCHLD, &action, NULL) == -1)
-    {
-      pw_error ("sigaction");
-      abort ();
-    }
+  {
+    pw_error ("sigaction");
+    abort ();
+  }
 
   if (sigprocmask (SIG_UNBLOCK, &sigs, NULL) == -1)
-    {
-      pw_error ("sigprocmask");
-      abort ();
-    }
+  {
+    pw_error ("sigprocmask");
+    abort ();
+  }
 
   worker_pids = pids;
 }
@@ -237,19 +236,19 @@ worker_process_wait (int signo)
   pid_t pid;
 
   while (1)
+  {
+    pid = waitpid (-1, &status, WNOHANG);
+    if (pid == -1)
     {
-      pid = waitpid (-1, &status, WNOHANG);
-      if (pid == -1)
-        {
-          if (errno != ECHILD)
-            {
-              pw_error ("waitpid");
-            }
-          break;
-        }
-      if (pid == 0)
-        break;
-      pw_debug ("%d child %d process exit, status: %d\n", getpid (), pid,
-                WEXITSTATUS (status));
+      if (errno != ECHILD)
+      {
+        pw_error ("waitpid");
+      }
+      break;
     }
+    if (pid == 0)
+      break;
+    pw_debug ("%d child %d process exit, status: %d\n", getpid (), pid,
+              WEXITSTATUS (status));
+  }
 }
