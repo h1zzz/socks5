@@ -41,22 +41,22 @@
 #define BGLCY(s) "\033[106m" s "\033[0m"
 #define BGBRI(s) "\033[107m" s "\033[0m"
 
-#define putf(args...) fprintf (stdout, args)
+#define putf(args...) fprintf(stdout, args)
 
 #ifndef NDEBUG
-#  include <errno.h>
-#  include <string.h>
-#  include <unistd.h>
-#  define pw_debug(args...)                                                   \
-    ({                                                                        \
-      fprintf (stderr, CGRA ("%s:%d ") CLGN ("[%d]") CGRA (" - "),            \
-               basename (__FILE__), __LINE__, getpid ());                     \
-      fprintf (stderr, args);                                                 \
-    })
-#  define pw_error(str) pw_debug (str CRED (": %s\n"), strerror (errno))
+#    include <errno.h>
+#    include <string.h>
+#    include <unistd.h>
+#    define pw_debug(args...)                                        \
+        ({                                                           \
+            fprintf(stderr, CGRA("%s:%d ") CLGN("[%d]") CGRA(" - "), \
+                    basename(__FILE__), __LINE__, getpid());         \
+            fprintf(stderr, args);                                   \
+        })
+#    define pw_error(str) pw_debug(str CRED(": %s\n"), strerror(errno))
 #else
-#  define pw_debug(args...)
-#  define pw_error(str)
+#    define pw_debug(args...)
+#    define pw_error(str)
 #endif /* NDEBUG */
 
 #endif /* pw_debug.h */

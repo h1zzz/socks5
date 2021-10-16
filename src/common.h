@@ -11,21 +11,19 @@
 #include "config.h"
 #include "ev.h"
 
-struct g_option
-{
-  uint32_t worker_processes;
-  uint32_t worker_connections;
-  int is_daemon;
-  const char *user;
-  const char *passwd;
-  const char *host;
-  uint16_t port;
+struct g_option {
+    uint32_t worker_processes;
+    uint32_t worker_connections;
+    int is_daemon;
+    const char *user;
+    const char *passwd;
+    const char *host;
+    uint16_t port;
 };
 
 extern struct g_option g_opt; /* definition main.c */
 
-void worker_listen_add (int fd, uint16_t flags, event_handler_t *fn,
-                        void *data);
-void worker_listen_delete (int fd);
+void worker_listen_add(int fd, uint16_t flags, event_handler_t *fn, void *data);
+void worker_listen_delete(int fd);
 
 #endif /* common.h */

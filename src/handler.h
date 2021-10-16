@@ -7,7 +7,7 @@
 
 #include "ev.h"
 
-void handler_socks (struct event_base *base, int fd, u_int16_t flags,
-                    void *data);
+void handler_socks(struct event_base *base, int fd, u_int16_t flags,
+                   void *data);
 
 #endif /* socks_handler.h */
