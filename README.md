@@ -5,4 +5,13 @@
 - macos
 - linux
 
-**this project no done.**
+## Builder
+
+```shell
+$ mkdir build
+$ cd build
+$ cmake ..
+$ make
+$ cd src
+$ ./socks --help
+```
