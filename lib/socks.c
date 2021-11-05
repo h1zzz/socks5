@@ -201,7 +201,10 @@ int socks_get_method(struct socks_conn *c)
         return -1;
     }
 
-    c->state = SOCKS_AUTH;
+    if (c->method == 0x00)
+        c->state = SOCKS_CMD;
+    else
+        c->state = SOCKS_AUTH;
 
     return 0;
 }
