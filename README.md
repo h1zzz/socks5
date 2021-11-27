@@ -2,6 +2,8 @@
 
 **socks5 server**
 
+**There are some bugs in this repo**
+
 - macos
 - linux
 
